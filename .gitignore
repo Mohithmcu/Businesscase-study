@@ -1,0 +1,24 @@
+# Python & IDE cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.streamlit/
+*.log
+
+# Proprietary operational & customer datasets (Per Kestrel Ops Policy §10)
+*-train.csv
+*-test_unlabelled.csv
+*-customers.csv
+*-products.csv
+*-sample_submission.csv
+*-ops-policy.pdf
+data/
+raw_data/
+
+# Internal memos and submission forms (submitted via portal / Google Drive)
+memo*.md
+submission*.md

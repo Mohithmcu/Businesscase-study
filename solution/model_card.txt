@@ -1,0 +1,50 @@
+KESTREL HOME – RETURNS RISK MODEL CARD (LEAK-FREE v3)
+======================================================
+Date       : 2026-10-05
+Algorithm  : LightGBM gradient-boosted trees (binary classification)
+Features   : 69 (64 numeric + 5 categorical)
+Best iter  : 124 (early-stopped on time-based validation AUC)
+
+--- DATA PREPARATION & LEAKAGE CORRECTIONS ------------
+1. TARGET LEAKAGE ELIMINATED: In historical CRM data, last_service_event_type
+   contained post-dispatch events (REVERSE_PICKUP = 100% returns, INSTALL_DONE = 0%).
+   All service event columns (including svc_none, last_service_event_type, pickup_scheduled_at)
+   were completely excluded from features. The model relies strictly on genuine pre-dispatch signals.
+2. OCTOBER 2025 GATEWAY FIX: October orders had order_value_inr recorded in paise (100x inflated).
+   Corrected by dividing October orders by 100.
+3. PARTNER FEED DEDUPLICATION: 651 duplicate records in partner_feed were removed, keeping CRM records.
+4. VALIDATION: Strict time-based holdout (85% train: 8,928 orders / 15% validation: 1,576 orders, cutoff 2026-04-24).
+
+--- VALIDATION METRICS (Strict Time Holdout) ----------
+  ROC-AUC               : 0.7572
+  Average Precision (AP): 0.3648 (3.2x lift over 11.3% baseline)
+  Log-Loss              : 0.3026
+  ROC-AUC (NONE-only)   : 0.8105
+
+--- THRESHOLD SWEEP (700 Orders / Month Volume) -------
+Policy: Confirmation calls cost Rs 45, prevent ~35% of returns on called orders (Policy §4 & §7).
+Return cost: Rs 1,150. Base returns per month ≈ 79.
+
+  Thr    Prec     Rec      F1  Flagged%  Calls/Mo  Prev/Mo  Net P&L Savings/Mo
+ 0.08   0.187   0.770   0.301     46.5%     326       21.3      Rs  9,823
+ 0.10   0.222   0.669   0.333     34.1%     238       18.5      Rs 10,525
+ 0.12   0.253   0.596   0.355     26.6%     186       16.5      Rs 10,561
+ 0.15   0.303   0.511   0.381     19.0%     133       14.1      Rs 10,260
+ 0.18   0.332   0.427   0.373     14.5%     102       11.8      Rs  8,999
+ 0.20   0.356   0.410   0.381     13.0%      91       11.3      Rs  8,943
+ 0.25   0.404   0.320   0.357      8.9%      63        8.9      Rs  7,364
+ 0.30   0.447   0.236   0.309      6.0%      42        6.5      Rs  5,624
+
+--- TEST SCORE DISTRIBUTION (July–Sept 2026, 2,096 orders)
+  Min : 0.0220
+  p50 : 0.0715
+  Mean: 0.1089
+  p90 : 0.2321
+  p95 : 0.3445
+  Max : 0.7851
+
+--- SHIELD MEMBER POLICY ------------------------------
+Shield subscribers return at 18.7% across all training data (7.8% on NONE-only rows) vs 9.3%
+for non-Shield (3.4% on NONE-only rows). They have free 30-day returns by policy (Policy §6)
+and represent the highest LTV.
+RULE: Never place a hard dispatch hold on Shield members. Route to concierge confirmation calls only.
